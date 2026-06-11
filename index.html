@@ -43,6 +43,97 @@ button{padding:12px 0;border:none;border-radius:8px;font-size:1rem;cursor:pointe
 
 <body>
 
+<div class="community-panel">
+  <span>ユーザーID:</span>
+  <input type="text" id="userIdInput" placeholder="your_id">
+  <button id="setUserIdBtn">設定</button>
+
+  <span>コミュニティ:</span>
+  <select id="communitySelect"></select>
+  <input type="text" id="newCommunityName" placeholder="新規コミュニティ名">
+  <button id="createCommunityBtn">作成</button>
+
+  <label><input type="checkbox" id="shareToggle" checked> 結果を共有</label>
+  <button id="loadCommunityLogBtn">コミュニティログ取得</button>
+  <button id="searchUserBtn">ユーザー検索</button>
+</div>
+
+<button id="addTrpg">＋ TRPGウィンドウ追加</button>
+
+<div class="color-panel">
+  <div>背景色</div><input type="color" id="bgColor" value="#f3f4f6">
+  <div>電卓色</div><input type="color" id="calcColor" value="#ffffff">
+  <div>TRPG色</div><input type="color" id="trpgColor" value="#ffffff">
+</div>
+
+<div class="log-panel" id="logPanel"></div>
+
+<!-- 電卓ウィンドウ -->
+<div class="window calc" id="calcWin">
+  <button class="reset-btn" id="resetCalc">戻す</button>
+  <div class="display"><div class="result" id="res">0</div></div>
+  <input type="text" id="expr" class="expr-input" placeholder="式を入力">
+
+  <div class="box">
+    <input type="number" id="randMin" placeholder="min">
+    <input type="number" id="randMax" placeholder="max">
+    <button id="randGen">生成</button>
+  </div>
+
+  <div class="box">
+    <input type="number" id="diceA" placeholder="A個">
+    <input type="number" id="diceB" placeholder="B面">
+    <button id="diceRoll">AdB</button>
+  </div>
+
+  <div class="grid">
+    <button class="clear" data-value="AC">AC</button>
+    <button class="op" data-value="%">%</button>
+    <button class="op" data-value="sqrt">√</button>
+    <button class="op" data-value="/">÷</button>
+
+    <button class="num" data-value="7">7</button>
+    <button class="num" data-value="8">8</button>
+    <button class="num" data-value="9">9</button>
+    <button class="op" data-value="*">×</button>
+
+    <button class="num" data-value="4">4</button>
+    <button class="num" data-value="5">5</button>
+    <button class="num" data-value="6">6</button>
+    <button class="op" data-value="-">−</button>
+
+    <button class="num" data-value="1">1</button>
+    <button class="num" data-value="2">2</button>
+    <button class="num" data-value="3">3</button>
+    <button class="op" data-value="+">＋</button>
+
+    <button class="num" data-value="0">0</button>
+    <button class="num" data-value="00">00</button>
+    <button class="num" data-value=".">.</button>
+    <button class="equal" id="equal">＝</button>
+  </div>
+</div>
+
+<!-- TRPGテンプレート -->
+<template id="trpgTemplate">
+  <div class="window trpg">
+    <button class="reset-btn trpg-reset">戻す</button>
+    <div class="display"><div class="result trpg-result">判定結果</div></div>
+    <div class="box">
+      <input type="number" class="skillVal" placeholder="技能" style="width:50px;">
+      <button class="skillCheck">判定</button>
+    </div>
+    <div class="skill-box">
+      <h3>技能リスト</h3>
+      <div class="skill-add">
+        <input type="text" class="skillName" placeholder="技能名">
+        <input type="number" class="skillValue" placeholder="値" style="width:50px;">
+        <button class="skillAddBtn">追加</button>
+      </div>
+      <div class="skillList"></div>
+    </div>
+  </div>
+</template>
 
 <script>
 /* ------------------------------
@@ -56,7 +147,6 @@ function makeDraggable(win, resetBtn, key, defX, defY){
   win.style.left = defX;
   win.style.top = defY;
 
-  /* マウス開始 */
   win.addEventListener("mousedown", e => {
     if (e.target === resetBtn) return;
     dragging = true;
@@ -65,20 +155,17 @@ function makeDraggable(win, resetBtn, key, defX, defY){
     offsetY = e.clientY - win.offsetTop;
   });
 
-  /* マウス移動 */
   document.addEventListener("mousemove", e => {
     if (!dragging) return;
     win.style.left = (e.clientX - offsetX) + "px";
     win.style.top = (e.clientY - offsetY) + "px";
   });
 
-  /* マウス終了 */
   document.addEventListener("mouseup", () => {
     dragging = false;
     win.classList.remove("dragging");
   });
 
-  /* スマホ開始 */
   win.addEventListener("touchstart", e => {
     if (e.target === resetBtn) return;
     dragging = true;
@@ -88,7 +175,6 @@ function makeDraggable(win, resetBtn, key, defX, defY){
     offsetY = t.clientY - win.offsetTop;
   });
 
-  /* スマホ移動 */
   win.addEventListener("touchmove", e => {
     if (!dragging) return;
     const t = e.touches[0];
@@ -96,13 +182,11 @@ function makeDraggable(win, resetBtn, key, defX, defY){
     win.style.top = (t.clientY - offsetY) + "px";
   });
 
-  /* スマホ終了 */
   win.addEventListener("touchend", () => {
     dragging = false;
     win.classList.remove("dragging");
   });
 
-  /* 戻すボタン */
   resetBtn.onclick = () => {
     win.style.left = defX;
     win.style.top = defY;
@@ -313,122 +397,4 @@ async function sendResultToServer(resultText){
   });
 }
 
-loadCommunityLogBtn.onclick = async () => {
-  const community = communitySelect.value;
-  if (!community) return;
-
-  const res = await fetch("/api/result/" + encodeURIComponent(community));
-  const list = await res.json();
-
-  logPanel.innerHTML = "";
-  list.forEach(item => {
-    appendLogItem(`[${item.userId}] ${new Date(item.timestamp).toLocaleString()} / ${item.result}`);
-  });
-};
-
-searchUserBtn.onclick = async () => {
-  const id = prompt("検索するユーザーIDを入力");
-  if (!id) return;
-
-  const res = await fetch("/api/user/" + encodeURIComponent(id));
-  const list = await res.json();
-
-  logPanel.innerHTML = "";
-  list.forEach(item => {
-    appendLogItem(`[${item.community}] ${new Date(item.timestamp).toLocaleString()} / ${item.result}`);
-  });
-};
-
-/* ------------------------------
-   TRPGウィンドウ内部処理
------------------------------- */
-function setupTrpgWindow(win){
-  const resultEl = win.querySelector(".trpg-result");
-  const skillVal = win.querySelector(".skillVal");
-  const skillCheck = win.querySelector(".skillCheck");
-  const skillName = win.querySelector(".skillName");
-  const skillValue = win.querySelector(".skillValue");
-  const skillAddBtn = win.querySelector(".skillAddBtn");
-  const skillList = win.querySelector(".skillList");
-
-  let skills = [];
-
-  function render(){
-    skillList.innerHTML = "";
-    skills.forEach((s, i) => {
-      const div = document.createElement("div");
-      div.className = "skill-item";
-      div.innerHTML = `<span>${s.name}：${s.value}</span><span class="skill-del" data-i="${i}">✕</span>`;
-
-      div.onclick = e => {
-        if (e.target.classList.contains("skill-del")) return;
-        skillVal.value = s.value;
-      };
-
-      div.querySelector(".skill-del").onclick = () => {
-        skills.splice(i, 1);
-        render();
-      };
-
-      skillList.appendChild(div);
-    });
-
-    Sortable.create(skillList, {
-      animation: 150,
-      onEnd: () => {
-        const newOrder = [];
-        skillList.querySelectorAll(".skill-item").forEach(item => {
-          const t = item.querySelector("span").textContent;
-          const [n, v] = t.split("：");
-          newOrder.push({ name: n, value: Number(v) });
-        });
-        skills = newOrder;
-      }
-    });
-  }
-
-  skillAddBtn.onclick = () => {
-    const n = skillName.value.trim();
-    const v = Number(skillValue.value);
-    if (!n || isNaN(v)) return;
-
-    skills.push({ name: n, value: v });
-    render();
-
-    skillName.value = "";
-    skillValue.value = "";
-  };
-
-  skillCheck.onclick = async () => {
-    const s = Number(skillVal.value);
-    if (isNaN(s) || s <= 0) return;
-
-    const roll = Math.floor(Math.random() * 100) + 1;
-    const r = roll <= s ? "成功" : "失敗";
-    const text = `1d100 = ${roll} → ${r}（技能${s}）`;
-
-    resultEl.textContent = text;
-    appendLogItem(`[local] ${text}`);
-
-    await sendResultToServer(text);
-  };
-
-  render();
-}
-
-/* ------------------------------
-   色変更
------------------------------- */
-const bgColor = document.getElementById("bgColor");
-const calcColor = document.getElementById("calcColor");
-const trpgColor = document.getElementById("trpgColor");
-
-bgColor.oninput = () => { document.body.style.background = bgColor.value; };
-calcColor.oninput = () => { document.getElementById("calcWin").style.background = calcColor.value; };
-trpgColor.oninput = () => {
-  document.querySelectorAll(".trpg").forEach(w => w.style.background = trpgColor.value);
-};
-</script>
-
-</body>
-</html>
+loadCommunityLogBtn
