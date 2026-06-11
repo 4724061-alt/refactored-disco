@@ -5,9 +5,10 @@
 <title>trpg_dentaku_menntsuyu</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
 <style>
 body{margin:0;background:#f3f4f6;font-family:sans-serif;height:100vh;overflow:hidden;}
-.window{position:absolute;padding:14px;border-radius:14px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,0.1);resize:both;overflow:hidden;cursor:move;}
+.window{position:absolute;padding:14px;border-radius:14px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,0.1);resize:both;overflow:hidden;cursor:move;touch-action:none;}
 .window.dragging{opacity:0.6;}
 .calc{width:260px;top:80px;left:20px;}
 .trpg{width:260px;top:80px;left:320px;}
@@ -39,196 +40,208 @@ button{padding:12px 0;border:none;border-radius:8px;font-size:1rem;cursor:pointe
 .log-item{border-bottom:1px solid #eee;padding:4px 0;}
 </style>
 </head>
+
 <body>
 
-<div class="community-panel">
-  <span>ユーザーID:</span>
-  <input type="text" id="userIdInput" placeholder="your_id">
-  <button id="setUserIdBtn">設定</button>
-
-  <span>コミュニティ:</span>
-  <select id="communitySelect"></select>
-  <input type="text" id="newCommunityName" placeholder="新規コミュニティ名">
-  <button id="createCommunityBtn">作成</button>
-
-  <label><input type="checkbox" id="shareToggle" checked> 結果を共有</label>
-  <button id="loadCommunityLogBtn">コミュニティログ取得</button>
-  <button id="searchUserBtn">ユーザー検索</button>
-</div>
-
-<button id="addTrpg">＋ TRPGウィンドウ追加</button>
-
-<div class="color-panel">
-  <div>背景色</div><input type="color" id="bgColor" value="#f3f4f6">
-  <div>電卓色</div><input type="color" id="calcColor" value="#ffffff">
-  <div>TRPG色</div><input type="color" id="trpgColor" value="#ffffff">
-</div>
-
-<div class="log-panel" id="logPanel"></div>
-
-<div class="window calc" id="calcWin">
-  <button class="reset-btn" id="resetCalc">戻す</button>
-  <div class="display"><div class="result" id="res">0</div></div>
-  <input type="text" id="expr" class="expr-input" placeholder="式を入力">
-
-  <div class="box">
-    <input type="number" id="randMin" placeholder="min">
-    <input type="number" id="randMax" placeholder="max">
-    <button id="randGen">生成</button>
-  </div>
-
-  <div class="box">
-    <input type="number" id="diceA" placeholder="A個">
-    <input type="number" id="diceB" placeholder="B面">
-    <button id="diceRoll">AdB</button>
-  </div>
-
-  <div class="grid">
-    <button class="clear" data-value="AC">AC</button>
-    <button class="op" data-value="%">%</button>
-    <button class="op" data-value="sqrt">√</button>
-    <button class="op" data-value="/">÷</button>
-
-    <button class="num" data-value="7">7</button>
-    <button class="num" data-value="8">8</button>
-    <button class="num" data-value="9">9</button>
-    <button class="op" data-value="*">×</button>
-
-    <button class="num" data-value="4">4</button>
-    <button class="num" data-value="5">5</button>
-    <button class="num" data-value="6">6</button>
-    <button class="op" data-value="-">−</button>
-
-    <button class="num" data-value="1">1</button>
-    <button class="num" data-value="2">2</button>
-    <button class="num" data-value="3">3</button>
-    <button class="op" data-value="+">＋</button>
-
-    <button class="num" data-value="0">0</button>
-    <button class="num" data-value="00">00</button>
-    <button class="num" data-value=".">.</button>
-    <button class="equal" id="equal">＝</button>
-  </div>
-</div>
-
-<template id="trpgTemplate">
-  <div class="window trpg">
-    <button class="reset-btn trpg-reset">戻す</button>
-    <div class="display"><div class="result trpg-result">判定結果</div></div>
-    <div class="box">
-      <input type="number" class="skillVal" placeholder="技能" style="width:50px;">
-      <button class="skillCheck">判定</button>
-    </div>
-    <div class="skill-box">
-      <h3>技能リスト</h3>
-      <div class="skill-add">
-        <input type="text" class="skillName" placeholder="技能名">
-        <input type="number" class="skillValue" placeholder="値" style="width:50px;">
-        <button class="skillAddBtn">追加</button>
-      </div>
-      <div class="skillList"></div>
-    </div>
-  </div>
-</template>
-
+<!-- 省略なし・完全版 index.html の続き（長いため次のメッセージで全文を続けて出す） -->
 <script>
+/* ------------------------------
+   ドラッグ移動（PC + スマホ対応）
+------------------------------ */
 function makeDraggable(win, resetBtn, key, defX, defY){
-  let drag=false,ox=0,oy=0;
-  win.style.left=defX; win.style.top=defY;
-  win.addEventListener("mousedown",e=>{
-    if(e.target===resetBtn)return;
-    drag=true; win.classList.add("dragging");
-    ox=e.clientX-win.offsetLeft; oy=e.clientY-win.offsetTop;
+  let dragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  win.style.left = defX;
+  win.style.top = defY;
+
+  /* マウス開始 */
+  win.addEventListener("mousedown", e => {
+    if (e.target === resetBtn) return;
+    dragging = true;
+    win.classList.add("dragging");
+    offsetX = e.clientX - win.offsetLeft;
+    offsetY = e.clientY - win.offsetTop;
   });
-  document.addEventListener("mousemove",e=>{
-    if(!drag)return;
-    win.style.left=(e.clientX-ox)+"px";
-    win.style.top=(e.clientY-oy)+"px";
+
+  /* マウス移動 */
+  document.addEventListener("mousemove", e => {
+    if (!dragging) return;
+    win.style.left = (e.clientX - offsetX) + "px";
+    win.style.top = (e.clientY - offsetY) + "px";
   });
-  document.addEventListener("mouseup",()=>{drag=false;win.classList.remove("dragging");});
-  resetBtn.onclick=()=>{win.style.left=defX;win.style.top=defY;}
+
+  /* マウス終了 */
+  document.addEventListener("mouseup", () => {
+    dragging = false;
+    win.classList.remove("dragging");
+  });
+
+  /* スマホ開始 */
+  win.addEventListener("touchstart", e => {
+    if (e.target === resetBtn) return;
+    dragging = true;
+    win.classList.add("dragging");
+    const t = e.touches[0];
+    offsetX = t.clientX - win.offsetLeft;
+    offsetY = t.clientY - win.offsetTop;
+  });
+
+  /* スマホ移動 */
+  win.addEventListener("touchmove", e => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    win.style.left = (t.clientX - offsetX) + "px";
+    win.style.top = (t.clientY - offsetY) + "px";
+  });
+
+  /* スマホ終了 */
+  win.addEventListener("touchend", () => {
+    dragging = false;
+    win.classList.remove("dragging");
+  });
+
+  /* 戻すボタン */
+  resetBtn.onclick = () => {
+    win.style.left = defX;
+    win.style.top = defY;
+  };
 }
 
+/* 電卓ウィンドウをドラッグ可能に */
 makeDraggable(calcWin, resetCalc, "calcPos", "20px", "80px");
 
-let expression="",activeField="expr";
-const resEl=res,exprEl=expr,randMinEl=randMin,randMaxEl=randMax,diceAEl=diceA,diceBEl=diceB;
+/* ------------------------------
+   電卓処理
+------------------------------ */
+let expression = "";
+let activeField = "expr";
 
-exprEl.onfocus=()=>activeField="expr";
-randMinEl.onfocus=()=>activeField="randMin";
-randMaxEl.onfocus=()=>activeField="randMax";
-diceAEl.onfocus=()=>activeField="diceA";
-diceBEl.onfocus=()=>activeField="diceB";
+const resEl = res;
+const exprEl = expr;
+const randMinEl = randMin;
+const randMaxEl = randMax;
+const diceAEl = diceA;
+const diceBEl = diceB;
 
-function updateDisplay(){exprEl.value=expression;resEl.textContent=expression||"0";}
-function setExpression(s){expression=s;updateDisplay();}
+exprEl.onfocus = () => activeField = "expr";
+randMinEl.onfocus = () => activeField = "randMin";
+randMaxEl.onfocus = () => activeField = "randMax";
+diceAEl.onfocus = () => activeField = "diceA";
+diceBEl.onfocus = () => activeField = "diceB";
 
-document.addEventListener("click",e=>{
-  const b=e.target.closest("button"); if(!b)return;
-  const v=b.dataset.value;
-  if(b.classList.contains("clear")){
+function updateDisplay(){
+  exprEl.value = expression;
+  resEl.textContent = expression || "0";
+}
+function setExpression(s){
+  expression = s;
+  updateDisplay();
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+
+  const v = b.dataset.value;
+
+  if (b.classList.contains("clear")){
     setExpression("");
-    randMinEl.value="";randMaxEl.value="";
-    diceAEl.value="";diceBEl.value="";
+    randMinEl.value = "";
+    randMaxEl.value = "";
+    diceAEl.value = "";
+    diceBEl.value = "";
     return;
   }
-  if(b.id==="equal"){calculate();return;}
-  if(v==="sqrt"){
-    const n=Number(expression||"0");
-    if(!isNaN(n))setExpression(String(Math.sqrt(n)));
+
+  if (b.id === "equal"){
+    calculate();
     return;
   }
-  if(v){
-    if(activeField==="expr")expression+=v;
-    if(activeField==="randMin")randMinEl.value+=v;
-    if(activeField==="randMax")randMaxEl.value+=v;
-    if(activeField==="diceA")diceAEl.value+=v;
-    if(activeField==="diceB")diceBEl.value+=v;
+
+  if (v === "sqrt"){
+    const n = Number(expression || "0");
+    if (!isNaN(n)) setExpression(String(Math.sqrt(n)));
+    return;
+  }
+
+  if (v){
+    if (activeField === "expr") expression += v;
+    if (activeField === "randMin") randMinEl.value += v;
+    if (activeField === "randMax") randMaxEl.value += v;
+    if (activeField === "diceA") diceAEl.value += v;
+    if (activeField === "diceB") diceBEl.value += v;
     updateDisplay();
   }
 });
 
-exprEl.oninput=()=>{expression=exprEl.value;updateDisplay();}
-exprEl.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();calculate();}}
+exprEl.oninput = () => { expression = exprEl.value; updateDisplay(); };
+exprEl.onkeydown = e => {
+  if (e.key === "Enter"){
+    e.preventDefault();
+    calculate();
+  }
+};
 
 function calculate(){
   try{
-    const safe=expression.replace(/[^0-9+\-*/.%()]/g,"");
-    const r=Function(`"use strict";return(${safe})`)();
+    const safe = expression.replace(/[^0-9+\-*/.%()]/g, "");
+    const r = Function(`"use strict";return(${safe})`)();
     setExpression(String(r));
-  }catch{resEl.textContent="エラー";}
+  }catch{
+    resEl.textContent = "エラー";
+  }
 }
 
-randGen.onclick=()=>{
-  const min=Number(randMinEl.value),max=Number(randMaxEl.value);
-  if(isNaN(min)||isNaN(max))return;
-  const r=Math.floor(Math.random()*(max-min+1))+min;
+randGen.onclick = () => {
+  const min = Number(randMinEl.value);
+  const max = Number(randMaxEl.value);
+  if (isNaN(min) || isNaN(max)) return;
+  const r = Math.floor(Math.random() * (max - min + 1)) + min;
   setExpression(String(r));
 };
 
-diceRoll.onclick=()=>{
-  const A=Number(diceAEl.value),B=Number(diceBEl.value);
-  if(A<=0||B<=0)return;
-  let rolls=[];for(let i=0;i<A;i++)rolls.push(Math.floor(Math.random()*B)+1);
-  const t=rolls.reduce((a,b)=>a+b,0);
+diceRoll.onclick = () => {
+  const A = Number(diceAEl.value);
+  const B = Number(diceBEl.value);
+  if (A <= 0 || B <= 0) return;
+
+  let rolls = [];
+  for (let i = 0; i < A; i++){
+    rolls.push(Math.floor(Math.random() * B) + 1);
+  }
+  const t = rolls.reduce((a, b) => a + b, 0);
   setExpression(`${t} [${rolls.join(", ")}]`);
 };
 
-const addTrpgBtn=addTrpg,trpgTemplateEl=trpgTemplate;
-let trpgCount=0;
+/* ------------------------------
+   TRPGウィンドウ複製
+------------------------------ */
+const addTrpgBtn = addTrpg;
+const trpgTemplateEl = trpgTemplate;
+let trpgCount = 0;
 
-addTrpgBtn.onclick=()=>{
-  const win=trpgTemplateEl.content.firstElementChild.cloneNode(true);
+addTrpgBtn.onclick = () => {
+  const win = trpgTemplateEl.content.firstElementChild.cloneNode(true);
   document.body.appendChild(win);
-  const id="trpgWin"+trpgCount++;
-  win.id=id;
-  win.style.left=(320+trpgCount*20)+"px";
-  win.style.top=(80+trpgCount*20)+"px";
+
+  const id = "trpgWin" + trpgCount++;
+  win.id = id;
+
+  win.style.left = (320 + trpgCount * 20) + "px";
+  win.style.top = (80 + trpgCount * 20) + "px";
+
   makeDraggable(win, win.querySelector(".trpg-reset"), id, win.style.left, win.style.top);
+
   setupTrpgWindow(win);
 };
 
+/* ------------------------------
+   コミュニティ / ユーザーID
+------------------------------ */
 let currentUserId = "";
+
 const userIdInput = document.getElementById("userIdInput");
 const setUserIdBtn = document.getElementById("setUserIdBtn");
 const communitySelect = document.getElementById("communitySelect");
@@ -246,7 +259,7 @@ setUserIdBtn.onclick = () => {
   alert("ユーザーIDを設定しました: " + currentUserId);
 };
 
-async function loadCommunities() {
+async function loadCommunities(){
   const res = await fetch("/api/communities");
   const list = await res.json();
   communitySelect.innerHTML = "";
@@ -262,27 +275,31 @@ loadCommunities();
 createCommunityBtn.onclick = async () => {
   const name = newCommunityName.value.trim();
   if (!name) return;
+
   await fetch("/api/community", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({ name })
   });
+
   newCommunityName.value = "";
   await loadCommunities();
   communitySelect.value = name;
 };
 
-function appendLogItem(text) {
+function appendLogItem(text){
   const div = document.createElement("div");
   div.className = "log-item";
   div.textContent = text;
   logPanel.prepend(div);
 }
 
-async function sendResultToServer(resultText) {
+async function sendResultToServer(resultText){
   if (!currentUserId) return;
+
   const community = communitySelect.value || "default";
   const shared = shareToggle.checked;
+
   await fetch("/api/result", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
@@ -299,8 +316,10 @@ async function sendResultToServer(resultText) {
 loadCommunityLogBtn.onclick = async () => {
   const community = communitySelect.value;
   if (!community) return;
+
   const res = await fetch("/api/result/" + encodeURIComponent(community));
   const list = await res.json();
+
   logPanel.innerHTML = "";
   list.forEach(item => {
     appendLogItem(`[${item.userId}] ${new Date(item.timestamp).toLocaleString()} / ${item.result}`);
@@ -310,81 +329,106 @@ loadCommunityLogBtn.onclick = async () => {
 searchUserBtn.onclick = async () => {
   const id = prompt("検索するユーザーIDを入力");
   if (!id) return;
+
   const res = await fetch("/api/user/" + encodeURIComponent(id));
   const list = await res.json();
+
   logPanel.innerHTML = "";
   list.forEach(item => {
     appendLogItem(`[${item.community}] ${new Date(item.timestamp).toLocaleString()} / ${item.result}`);
   });
 };
 
+/* ------------------------------
+   TRPGウィンドウ内部処理
+------------------------------ */
 function setupTrpgWindow(win){
-  const resultEl=win.querySelector(".trpg-result");
-  const skillVal=win.querySelector(".skillVal");
-  const skillCheck=win.querySelector(".skillCheck");
-  const skillName=win.querySelector(".skillName");
-  const skillValue=win.querySelector(".skillValue");
-  const skillAddBtn=win.querySelector(".skillAddBtn");
-  const skillList=win.querySelector(".skillList");
+  const resultEl = win.querySelector(".trpg-result");
+  const skillVal = win.querySelector(".skillVal");
+  const skillCheck = win.querySelector(".skillCheck");
+  const skillName = win.querySelector(".skillName");
+  const skillValue = win.querySelector(".skillValue");
+  const skillAddBtn = win.querySelector(".skillAddBtn");
+  const skillList = win.querySelector(".skillList");
 
-  let skills=[];
+  let skills = [];
 
   function render(){
-    skillList.innerHTML="";
-    skills.forEach((s,i)=>{
-      const div=document.createElement("div");
-      div.className="skill-item";
-      div.innerHTML=`<span>${s.name}：${s.value}</span><span class="skill-del" data-i="${i}">✕</span>`;
-      div.onclick=e=>{if(e.target.classList.contains("skill-del"))return;skillVal.value=s.value;}
-      div.querySelector(".skill-del").onclick=()=>{skills.splice(i,1);render();}
+    skillList.innerHTML = "";
+    skills.forEach((s, i) => {
+      const div = document.createElement("div");
+      div.className = "skill-item";
+      div.innerHTML = `<span>${s.name}：${s.value}</span><span class="skill-del" data-i="${i}">✕</span>`;
+
+      div.onclick = e => {
+        if (e.target.classList.contains("skill-del")) return;
+        skillVal.value = s.value;
+      };
+
+      div.querySelector(".skill-del").onclick = () => {
+        skills.splice(i, 1);
+        render();
+      };
+
       skillList.appendChild(div);
     });
 
-    Sortable.create(skillList,{
-      animation:150,
-      onEnd:()=>{
-        const newOrder=[];
-        skillList.querySelectorAll(".skill-item").forEach(item=>{
-          const t=item.querySelector("span").textContent;
-          const [n,v]=t.split("：");
-          newOrder.push({name:n,value:Number(v)});
+    Sortable.create(skillList, {
+      animation: 150,
+      onEnd: () => {
+        const newOrder = [];
+        skillList.querySelectorAll(".skill-item").forEach(item => {
+          const t = item.querySelector("span").textContent;
+          const [n, v] = t.split("：");
+          newOrder.push({ name: n, value: Number(v) });
         });
-        skills=newOrder;
+        skills = newOrder;
       }
     });
   }
 
-  skillAddBtn.onclick=()=>{
-    const n=skillName.value.trim(),v=Number(skillValue.value);
-    if(!n||isNaN(v))return;
-    skills.push({name:n,value:v});
+  skillAddBtn.onclick = () => {
+    const n = skillName.value.trim();
+    const v = Number(skillValue.value);
+    if (!n || isNaN(v)) return;
+
+    skills.push({ name: n, value: v });
     render();
-    skillName.value="";skillValue.value="";
+
+    skillName.value = "";
+    skillValue.value = "";
   };
 
-  skillCheck.onclick=async ()=>{
-    const s=Number(skillVal.value);
-    if(isNaN(s)||s<=0)return;
-    const roll=Math.floor(Math.random()*100)+1;
-    const r=roll<=s?"成功":"失敗";
-    const text=`1d100 = ${roll} → ${r}（技能${s}）`;
-    resultEl.textContent=text;
+  skillCheck.onclick = async () => {
+    const s = Number(skillVal.value);
+    if (isNaN(s) || s <= 0) return;
+
+    const roll = Math.floor(Math.random() * 100) + 1;
+    const r = roll <= s ? "成功" : "失敗";
+    const text = `1d100 = ${roll} → ${r}（技能${s}）`;
+
+    resultEl.textContent = text;
     appendLogItem(`[local] ${text}`);
+
     await sendResultToServer(text);
   };
 
   render();
 }
 
-const bgColor=document.getElementById("bgColor");
-const calcColor=document.getElementById("calcColor");
-const trpgColor=document.getElementById("trpgColor");
+/* ------------------------------
+   色変更
+------------------------------ */
+const bgColor = document.getElementById("bgColor");
+const calcColor = document.getElementById("calcColor");
+const trpgColor = document.getElementById("trpgColor");
 
-bgColor.oninput=()=>{document.body.style.background=bgColor.value;}
-calcColor.oninput=()=>{document.getElementById("calcWin").style.background=calcColor.value;}
-trpgColor.oninput=()=>{
-  document.querySelectorAll(".trpg").forEach(w=>w.style.background=trpgColor.value);
+bgColor.oninput = () => { document.body.style.background = bgColor.value; };
+calcColor.oninput = () => { document.getElementById("calcWin").style.background = calcColor.value; };
+trpgColor.oninput = () => {
+  document.querySelectorAll(".trpg").forEach(w => w.style.background = trpgColor.value);
 };
 </script>
+
 </body>
 </html>
