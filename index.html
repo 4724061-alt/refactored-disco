@@ -651,6 +651,19 @@ calcColor.oninput = () => { document.getElementById("calcWin").style.background 
 trpgColor.oninput = () => {
   document.querySelectorAll(".trpg").forEach(w => w.style.background = trpgColor.value);
 };
+// --- リアルタイムログ更新（3秒ごと） ---
+setInterval(async () => {
+  const community = communitySelect.value;
+  if (!community) return;
+
+  const res = await fetch("/api/result/" + encodeURIComponent(community));
+  const list = await res.json();
+
+  logPanel.innerHTML = "";
+  list.forEach(item => {
+    appendLogItem(`[${item.userId}] ${new Date(item.timestamp).toLocaleString()} / ${item.result}`);
+  });
+}, 3000);
 </script>
 </body>
 </html>
