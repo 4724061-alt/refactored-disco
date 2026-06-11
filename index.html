@@ -7,42 +7,221 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <style>
-body{margin:0;background:#f3f4f6;font-family:sans-serif;height:100vh;overflow:hidden;}
-.window{position:absolute;padding:14px;border-radius:14px;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,0.1);resize:both;overflow:hidden;cursor:move;touch-action:none;}
+body{
+  margin:0;
+  background:#f3f4f6;
+  font-family:sans-serif;
+  height:100vh;
+  overflow:hidden;
+}
+
+/* すべてのウィンドウ共通 */
+.window{
+  position:absolute;
+  padding:14px;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 8px 20px rgba(0,0,0,0.1);
+  resize:both;
+  overflow:hidden;
+  cursor:move;
+  touch-action:none;
+}
 .window.dragging{opacity:0.6;}
-.calc{width:260px;top:80px;left:20px;}
-.trpg{width:260px;top:80px;left:320px;}
-.reset-btn{position:absolute;top:4px;right:4px;background:#0ea5e9;color:#fff;border:none;padding:3px 6px;border-radius:6px;cursor:pointer;font-size:0.75rem;}
-.display{background:#111827;color:#fff;padding:8px 10px;border-radius:8px;margin-bottom:6px;min-height:32px;text-align:right;}
-.result{font-size:1.1rem;font-weight:bold;white-space:nowrap;overflow:hidden;}
-.expr-input{width:100%;padding:6px 8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;font-size:0.95rem;}
-.box{background:#e5e7eb;padding:6px;border-radius:8px;margin-bottom:8px;display:flex;gap:4px;align-items:center;}
-.box input{width:60px;padding:4px;font-size:0.9rem;}
-.box button{padding:4px 8px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.85rem;}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
-button{padding:12px 0;border:none;border-radius:8px;font-size:1rem;cursor:pointer;}
+
+/* 初期位置を修正（コミュニティと重ならない） */
+.calc{
+  width:260px;
+  bottom:20px;
+  left:20px;
+}
+.trpg{
+  width:260px;
+  top:120px;
+  left:350px;
+}
+
+.reset-btn{
+  position:absolute;
+  top:4px;
+  right:4px;
+  background:#0ea5e9;
+  color:#fff;
+  border:none;
+  padding:3px 6px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:0.75rem;
+}
+
+.display{
+  background:#111827;
+  color:#fff;
+  padding:8px 10px;
+  border-radius:8px;
+  margin-bottom:6px;
+  min-height:32px;
+  text-align:right;
+}
+.result{
+  font-size:1.1rem;
+  font-weight:bold;
+  white-space:nowrap;
+  overflow:hidden;
+}
+
+.expr-input{
+  width:100%;
+  padding:6px 8px;
+  margin-bottom:8px;
+  border-radius:6px;
+  border:1px solid #ccc;
+  font-size:0.95rem;
+}
+
+.box{
+  background:#e5e7eb;
+  padding:6px;
+  border-radius:8px;
+  margin-bottom:8px;
+  display:flex;
+  gap:4px;
+  align-items:center;
+}
+.box input{
+  width:60px;
+  padding:4px;
+  font-size:0.9rem;
+}
+.box button{
+  padding:4px 8px;
+  background:#0ea5e9;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:0.85rem;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:4px;
+}
+button{
+  padding:12px 0;
+  border:none;
+  border-radius:8px;
+  font-size:1rem;
+  cursor:pointer;
+}
 .num{background:#e5e7eb;}
 .op{background:#0ea5e9;color:#fff;}
 .clear{background:#ef4444;color:#fff;}
 .equal{background:#22c55e;color:#fff;}
-.skill-box{background:#fff;padding:8px;border-radius:8px;margin-top:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1);}
-.skill-add{display:flex;gap:4px;margin-bottom:8px;}
-.skill-add input{padding:4px;font-size:0.85rem;}
-.skill-item{padding:4px;font-size:0.85rem;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;cursor:grab;}
+
+.skill-box{
+  background:#fff;
+  padding:8px;
+  border-radius:8px;
+  margin-top:10px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+.skill-add{
+  display:flex;
+  gap:4px;
+  margin-bottom:8px;
+}
+.skill-add input{
+  padding:4px;
+  font-size:0.85rem;
+}
+.skill-item{
+  padding:4px;
+  font-size:0.85rem;
+  border-bottom:1px solid #ddd;
+  display:flex;
+  justify-content:space-between;
+  cursor:grab;
+}
 .skill-item:hover{background:#f0f0f0;}
 .skill-del{color:red;cursor:pointer;margin-left:10px;}
-#addTrpg{position:absolute;top:80px;left:600px;padding:6px 10px;background:#22c55e;color:#fff;border:none;border-radius:6px;cursor:pointer;}
-.color-panel{position:absolute;top:80px;right:20px;background:#fff;padding:10px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,0.1);width:200px;font-size:0.8rem;}
-.color-panel input{width:100%;margin-bottom:6px;}
-.community-panel{position:absolute;top:20px;left:20px;background:#fff;padding:10px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,0.1);width:360px;font-size:0.8rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
-.community-panel input, .community-panel select{padding:4px;font-size:0.8rem;}
-.log-panel{position:absolute;bottom:10px;left:20px;right:20px;background:#fff;padding:10px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,0.1);font-size:0.8rem;height:140px;overflow:auto;}
-.log-item{border-bottom:1px solid #eee;padding:4px 0;}
+
+#addTrpg{
+  position:absolute;
+  top:120px;
+  left:650px;
+  padding:6px 10px;
+  background:#22c55e;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+/* 色変更パネル */
+.color-panel{
+  position:absolute;
+  top:120px;
+  right:20px;
+  background:#fff;
+  padding:10px;
+  border-radius:10px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.1);
+  width:200px;
+  font-size:0.8rem;
+}
+.color-panel input{
+  width:100%;
+  margin-bottom:6px;
+}
+
+/* コミュニティパネル（上部固定） */
+.community-panel{
+  position:absolute;
+  top:10px;
+  left:10px;
+  right:10px;
+  background:#fff;
+  padding:10px;
+  border-radius:10px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.1);
+  font-size:0.8rem;
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+}
+.community-panel input,
+.community-panel select{
+  padding:4px;
+  font-size:0.8rem;
+}
+
+/* ログパネル */
+.log-panel{
+  position:absolute;
+  bottom:10px;
+  left:300px;
+  right:20px;
+  background:#fff;
+  padding:10px;
+  border-radius:10px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.1);
+  font-size:0.8rem;
+  height:140px;
+  overflow:auto;
+}
+.log-item{
+  border-bottom:1px solid #eee;
+  padding:4px 0;
+}
 </style>
 </head>
 
 <body>
 
+<!-- コミュニティパネル -->
 <div class="community-panel">
   <span>ユーザーID:</span>
   <input type="text" id="userIdInput" placeholder="your_id">
@@ -54,18 +233,20 @@ button{padding:12px 0;border:none;border-radius:8px;font-size:1rem;cursor:pointe
   <button id="createCommunityBtn">作成</button>
 
   <label><input type="checkbox" id="shareToggle" checked> 結果を共有</label>
-  <button id="loadCommunityLogBtn">コミュニティログ取得</button>
+  <button id="loadCommunityLogBtn">ログ取得</button>
   <button id="searchUserBtn">ユーザー検索</button>
 </div>
 
 <button id="addTrpg">＋ TRPGウィンドウ追加</button>
 
+<!-- 色変更パネル -->
 <div class="color-panel">
   <div>背景色</div><input type="color" id="bgColor" value="#f3f4f6">
   <div>電卓色</div><input type="color" id="calcColor" value="#ffffff">
   <div>TRPG色</div><input type="color" id="trpgColor" value="#ffffff">
 </div>
 
+<!-- ログパネル -->
 <div class="log-panel" id="logPanel"></div>
 
 <!-- 電卓ウィンドウ -->
@@ -134,11 +315,10 @@ button{padding:12px 0;border:none;border-radius:8px;font-size:1rem;cursor:pointe
     </div>
   </div>
 </template>
-
 <script>
-/* ------------------------------
+/* ============================================================
    ドラッグ移動（PC + スマホ対応）
------------------------------- */
+============================================================ */
 function makeDraggable(win, resetBtn, key, defX, defY){
   let dragging = false;
   let offsetX = 0;
@@ -147,6 +327,7 @@ function makeDraggable(win, resetBtn, key, defX, defY){
   win.style.left = defX;
   win.style.top = defY;
 
+  /* --- PC: マウス開始 --- */
   win.addEventListener("mousedown", e => {
     if (e.target === resetBtn) return;
     dragging = true;
@@ -155,17 +336,20 @@ function makeDraggable(win, resetBtn, key, defX, defY){
     offsetY = e.clientY - win.offsetTop;
   });
 
+  /* --- PC: マウス移動 --- */
   document.addEventListener("mousemove", e => {
     if (!dragging) return;
     win.style.left = (e.clientX - offsetX) + "px";
     win.style.top = (e.clientY - offsetY) + "px";
   });
 
+  /* --- PC: マウス終了 --- */
   document.addEventListener("mouseup", () => {
     dragging = false;
     win.classList.remove("dragging");
   });
 
+  /* --- スマホ: タッチ開始 --- */
   win.addEventListener("touchstart", e => {
     if (e.target === resetBtn) return;
     dragging = true;
@@ -175,6 +359,7 @@ function makeDraggable(win, resetBtn, key, defX, defY){
     offsetY = t.clientY - win.offsetTop;
   });
 
+  /* --- スマホ: タッチ移動 --- */
   win.addEventListener("touchmove", e => {
     if (!dragging) return;
     const t = e.touches[0];
@@ -182,11 +367,13 @@ function makeDraggable(win, resetBtn, key, defX, defY){
     win.style.top = (t.clientY - offsetY) + "px";
   });
 
+  /* --- スマホ: タッチ終了 --- */
   win.addEventListener("touchend", () => {
     dragging = false;
     win.classList.remove("dragging");
   });
 
+  /* --- 戻すボタン --- */
   resetBtn.onclick = () => {
     win.style.left = defX;
     win.style.top = defY;
@@ -196,9 +383,10 @@ function makeDraggable(win, resetBtn, key, defX, defY){
 /* 電卓ウィンドウをドラッグ可能に */
 makeDraggable(calcWin, resetCalc, "calcPos", "20px", "80px");
 
-/* ------------------------------
+
+/* ============================================================
    電卓処理
------------------------------- */
+============================================================ */
 let expression = "";
 let activeField = "expr";
 
@@ -299,9 +487,10 @@ diceRoll.onclick = () => {
   setExpression(`${t} [${rolls.join(", ")}]`);
 };
 
-/* ------------------------------
+
+/* ============================================================
    TRPGウィンドウ複製
------------------------------- */
+============================================================ */
 const addTrpgBtn = addTrpg;
 const trpgTemplateEl = trpgTemplate;
 let trpgCount = 0;
@@ -313,17 +502,18 @@ addTrpgBtn.onclick = () => {
   const id = "trpgWin" + trpgCount++;
   win.id = id;
 
-  win.style.left = (320 + trpgCount * 20) + "px";
-  win.style.top = (80 + trpgCount * 20) + "px";
+  win.style.left = (350 + trpgCount * 20) + "px";
+  win.style.top = (120 + trpgCount * 20) + "px";
 
   makeDraggable(win, win.querySelector(".trpg-reset"), id, win.style.left, win.style.top);
 
   setupTrpgWindow(win);
 };
 
-/* ------------------------------
-   コミュニティ / ユーザーID
------------------------------- */
+
+/* ============================================================
+   コミュニティ / ユーザーID / ログ
+============================================================ */
 let currentUserId = "";
 
 const userIdInput = document.getElementById("userIdInput");
@@ -397,4 +587,124 @@ async function sendResultToServer(resultText){
   });
 }
 
-loadCommunityLogBtn
+loadCommunityLogBtn.onclick = async () => {
+  const community = communitySelect.value;
+  if (!community) return;
+
+  const res = await fetch("/api/result/" + encodeURIComponent(community));
+  const list = await res.json();
+
+  logPanel.innerHTML = "";
+  list.forEach(item => {
+    appendLogItem(`[${item.userId}] ${new Date(item.timestamp).toLocaleString()} / ${item.result}`);
+  });
+};
+
+searchUserBtn.onclick = async () => {
+  const id = prompt("検索するユーザーIDを入力");
+  if (!id) return;
+
+  const res = await fetch("/api/user/" + encodeURIComponent(id));
+  const list = await res.json();
+
+  logPanel.innerHTML = "";
+  list.forEach(item => {
+    appendLogItem(`[${item.community}] ${new Date(item.timestamp).toLocaleString()} / ${item.result}`);
+  });
+};
+
+
+/* ============================================================
+   TRPGウィンドウ内部処理
+============================================================ */
+function setupTrpgWindow(win){
+  const resultEl = win.querySelector(".trpg-result");
+  const skillVal = win.querySelector(".skillVal");
+  const skillCheck = win.querySelector(".skillCheck");
+  const skillName = win.querySelector(".skillName");
+  const skillValue = win.querySelector(".skillValue");
+  const skillAddBtn = win.querySelector(".skillAddBtn");
+  const skillList = win.querySelector(".skillList");
+
+  let skills = [];
+
+  function render(){
+    skillList.innerHTML = "";
+    skills.forEach((s, i) => {
+      const div = document.createElement("div");
+      div.className = "skill-item";
+      div.innerHTML = `<span>${s.name}：${s.value}</span><span class="skill-del" data-i="${i}">✕</span>`;
+
+      div.onclick = e => {
+        if (e.target.classList.contains("skill-del")) return;
+        skillVal.value = s.value;
+      };
+
+      div.querySelector(".skill-del").onclick = () => {
+        skills.splice(i, 1);
+        render();
+      };
+
+      skillList.appendChild(div);
+    });
+
+    Sortable.create(skillList, {
+      animation: 150,
+      onEnd: () => {
+        const newOrder = [];
+        skillList.querySelectorAll(".skill-item").forEach(item => {
+          const t = item.querySelector("span").textContent;
+          const [n, v] = t.split("：");
+          newOrder.push({ name: n, value: Number(v) });
+        });
+        skills = newOrder;
+      }
+    });
+  }
+
+  skillAddBtn.onclick = () => {
+    const n = skillName.value.trim();
+    const v = Number(skillValue.value);
+    if (!n || isNaN(v)) return;
+
+    skills.push({ name: n, value: v });
+    render();
+
+    skillName.value = "";
+    skillValue.value = "";
+  };
+
+  skillCheck.onclick = async () => {
+    const s = Number(skillVal.value);
+    if (isNaN(s) || s <= 0) return;
+
+    const roll = Math.floor(Math.random() * 100) + 1;
+    const r = roll <= s ? "成功" : "失敗";
+    const text = `1d100 = ${roll} → ${r}（技能${s}）`;
+
+    resultEl.textContent = text;
+    appendLogItem(`[local] ${text}`);
+
+    await sendResultToServer(text);
+  };
+
+  render();
+}
+
+
+/* ============================================================
+   色変更
+============================================================ */
+const bgColor = document.getElementById("bgColor");
+const calcColor = document.getElementById("calcColor");
+const trpgColor = document.getElementById("trpgColor");
+
+bgColor.oninput = () => { document.body.style.background = bgColor.value; };
+calcColor.oninput = () => { document.getElementById("calcWin").style.background = calcColor.value; };
+trpgColor.oninput = () => {
+  document.querySelectorAll(".trpg").forEach(w => w.style.background = trpgColor.value);
+};
+</script>
+
+</body>
+</html>
